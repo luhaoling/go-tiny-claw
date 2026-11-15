@@ -75,13 +75,13 @@ func main() {
 	workdir, _ := os.Getwd()
 
 	// 1. 初始化真实的 Provider 大脑(指向智谱）
-	llmProvider := provider.NewZhipuOpenAIProvider("glm-4.5-air")
+	llmProvider := provider.NewZhipuClaudeProvider("glm-4.5-air")
 
 	// 2. 注入伪造的工具注册表
 	registry := &mockRegistry{}
 
 	// 3. 实例化并运行引擎，开启 EnableThinking =true 开启慢思考模式
-	eng := engine.NewAgentEngine(llmProvider, registry, workdir, false)
+	eng := engine.NewAgentEngine(llmProvider, registry, workdir, true)
 
 	// 4. 设定测试任务
 	prompt := "我想去北京跑步，帮我查查天气合适吗？"
