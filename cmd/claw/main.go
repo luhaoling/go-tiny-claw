@@ -23,14 +23,18 @@ func main() {
 	registry := tools.NewRegistry()
 
 	// 4. 将真实的 readFile 工具挂载在注册表中
-	readFileTool := tools.NewReadFileTool(workdir)
-	registry.Register(readFileTool)
+	registry.Register(tools.NewReadFileTool(workdir))
+	registry.Register(tools.NewWriteFileTool(workdir))
+	registry.Register(tools.NewBashTool(workdir))
+	registry.Register(tools.NewEditFileTool(workdir))
 
 	// 5. 实例化并运行引擎，关闭 EnableThinking =true 开启慢思考模式
-	eng := engine.NewAgentEngine(llmProvider, registry, workdir, false)
+	eng := engine.NewAgentEngine(llmProvider, registry, workdir, true)
 
 	// 6. 下发一个需要通过真实工具才能完成的任务
-	prompt := "请调用工具读取一下当前工作区目录下 hello.txt 文件的内容，并用一句话向我总结它说了什么。"
+	prompt := `
+	我当前目录下有一个 server.go 文件。 请帮我把里面 "TODO: 增加鉴权逻辑" 下面的那个 if 语句，整个替换为： if user == nil { fmt.Println("Forbidden!") return }
+	`
 	err := eng.Run(context.Background(), prompt)
 	if err != nil {
 		log.Fatalf("引擎崩溃:%v", err)
