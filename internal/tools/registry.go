@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 )
 
 // BaseTool 是所有具体工具必须实现的通用接口
@@ -21,6 +22,12 @@ type BaseTool interface {
 	Execute(ctx context.Context, args json.RawMessage) (string, error)
 }
 
+// ReadOnlyTool marks tools that do not mutate files or external state.
+// Tools that do not implement this interface are treated as write-capable.
+type ReadOnlyTool interface {
+	IsReadOnly() bool
+}
+
 // Registry 定义了工具的注册于分发执行接口
 type Registry interface {
 	//Register 挂载一个新的工具到系统中
@@ -31,6 +38,9 @@ type Registry interface {
 
 	// Execute 实际路由并执行模型请求的工具调用
 	Execute(ctx context.Context, call schema.ToolCall) schema.ToolResult
+
+	// IsReadOnly reports whether a registered tool is explicitly read-only.
+	IsReadOnly(name string) bool
 }
 
 func NewRegistry() Registry {
@@ -41,12 +51,15 @@ func NewRegistry() Registry {
 
 // registryImpl 是 Registry 接口的默认实现
 type registryImpl struct {
+	mu sync.RWMutex
 	// 使用 map 以工具的 Name 作为 Key 进行快速O(1)路由查找
 	tools map[string]BaseTool
 }
 
 func (r *registryImpl) Register(tool BaseTool) {
 	name := tool.Name()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if _, exists := r.tools[name]; exists {
 		log.Printf("[Warning] 工具 '%s' 已经被注册，将被覆盖。\n", name)
 	}
@@ -55,6 +68,8 @@ func (r *registryImpl) Register(tool BaseTool) {
 }
 
 func (r *registryImpl) GetAvailableTools() []schema.ToolDefinition {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	var defs []schema.ToolDefinition
 	for _, tool := range r.tools {
 		defs = append(defs, tool.Definition())
@@ -62,9 +77,22 @@ func (r *registryImpl) GetAvailableTools() []schema.ToolDefinition {
 	return defs
 }
 
+func (r *registryImpl) IsReadOnly(name string) bool {
+	r.mu.RLock()
+	tool, exists := r.tools[name]
+	r.mu.RUnlock()
+	if !exists {
+		return false
+	}
+	readOnlyTool, ok := tool.(ReadOnlyTool)
+	return ok && readOnlyTool.IsReadOnly()
+}
+
 func (r *registryImpl) Execute(ctx context.Context, call schema.ToolCall) schema.ToolResult {
 	// 1. 路由查找：如果在注册表中找不到该工具，这是模型产生了幻觉，直接向模型抛出错误
+	r.mu.RLock()
 	tool, exists := r.tools[call.Name]
+	r.mu.RUnlock()
 	if !exists {
 		errMsg := fmt.Sprintf("Error:系统中不存在名为 '%s' 的工具。", call.Name)
 		return schema.ToolResult{

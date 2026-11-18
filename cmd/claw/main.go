@@ -34,6 +34,7 @@ func main() {
 	// 6. 下发一个需要通过真实工具才能完成的任务
 	prompt := `
 	我当前目录下有 a.txt, b.txt, c.txt 三个文件。 为了节省时间，请你同时一次性读取这三个文件，并将它们的内容综合起来，告诉我它们分别记录了什么领域的信息.
+你需要创建一个 d.txt 文件，里面写入：这个是监控文件，监控项目运行指标。
 	`
 	err := eng.Run(context.Background(), prompt)
 	if err != nil {
