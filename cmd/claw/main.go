@@ -38,7 +38,10 @@ func main() {
 	handler := httpserverext.NewEventHandlerFunc(bot.GetEnentDispatcher())
 
 	// 7. 注册路由并启动 HTTP 服务
-	http.HandleFunc("/webhook/event", handler)
+	http.HandleFunc("/webhook/event", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("[HTTP] 收到飞书回调请求: method=%s path=%s remote=%s", r.Method, r.URL.Path, r.RemoteAddr)
+		handler(w, r)
+	})
 
 	port := ":48080"
 
