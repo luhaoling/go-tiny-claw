@@ -109,7 +109,14 @@ func (r *FeishuReporter) sendMsg(text string) {
 			Content(contentStr).
 			Build()).
 		Build()
-	_, _ = r.client.Im.Message.Create(context.Background(), msgReq)
+	resp, err := r.client.Im.Message.Create(context.Background(), msgReq)
+	if err != nil {
+		log.Printf("[Feishu]发送消息请求失败，会话 %s: %v", r.chatId, err)
+		return
+	}
+	if !resp.Success() {
+		log.Printf("[Feishu]发送消息被飞书拒绝，会话 %s，code=%d，msg=%s", r.chatId, resp.Code, resp.Msg)
+	}
 }
 
 func (r *FeishuReporter) OnThinking(ctx context.Context) {
