@@ -63,6 +63,10 @@ func (b *FeishuBot) GetEnentDispatcher() *dispatcher.EventDispatcher {
 		OnP2MessageReadV1(func(ctx context.Context, event *larkim.P2MessageReadV1) error {
 			// 消息已读事件，静默忽略（避免日志干扰）
 			return nil
+		}).
+		OnP2ChatAccessEventBotP2pChatEnteredV1(func(ctx context.Context, event *larkim.P2ChatAccessEventBotP2pChatEnteredV1) error {
+			// 机器人进入单聊时的通知事件；当前无需额外处理，正常确认即可。
+			return nil
 		})
 	return handler
 }
