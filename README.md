@@ -86,6 +86,32 @@ go build -o claw ./cmd/claw
 ./claw
 ```
 
+## 使用 Docker 后台运行
+
+项目提供 `Dockerfile` 和 `compose.yaml`。Compose 会构建镜像、在后台启动容器，并在 Docker 服务或主机重启后自动恢复运行。
+
+在 Linux 项目目录执行：
+
+```bash
+cp .env.example .env
+nano .env
+mkdir -p workspace
+CLAW_UID=$(id -u) CLAW_GID=$(id -g) docker compose up -d --build
+```
+
+将 `.env` 中的占位内容替换为真实凭证。`.env` 已加入 `.gitignore`，不要提交密钥。容器将 `workspace/` 挂载为 Agent 的工作目录，Agent 对该目录中文件的修改会保留在主机上。
+
+常用管理命令：
+
+```bash
+docker compose logs -f claw   # 查看实时日志
+docker compose restart claw   # 重启
+docker compose stop claw      # 停止
+docker compose up -d --build  # 重新构建并后台启动
+```
+
+飞书回调仍使用宿主机 `48080` 端口；请确保飞书配置的 HTTPS 回调 URL（路径 `/webhook/event`）经反向代理转发到该端口。不要把 `.env` 放入镜像或公开仓库。
+
 ## 工具行为
 
 | 工具 | 作用 | 备注 |

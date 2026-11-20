@@ -1,0 +1,14 @@
+services:
+  claw:
+    build: .
+    container_name: go-tiny-claw
+    restart: unless-stopped
+    env_file:
+      - .env
+    user: "${CLAW_UID:-1000}:${CLAW_GID:-1000}"
+    ports:
+      - "48080:48080"
+    working_dir: /workspace
+    volumes:
+      - ./workspace:/workspace
+    init: true
