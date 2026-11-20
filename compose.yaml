@@ -3,9 +3,13 @@ services:
     build: .
     container_name: go-tiny-claw
     restart: unless-stopped
-    env_file:
-      - .env
     user: "${CLAW_UID:-1000}:${CLAW_GID:-1000}"
+    environment:
+      ZHIPU_API_KEY: "${ZHIPU_API_KEY:?ZHIPU_API_KEY is not set}"
+      FEISHU_APP_ID: "${FEISHU_APP_ID:?FEISHU_APP_ID is not set}"
+      FEISHU_APP_SECRET: "${FEISHU_APP_SECRET:?FEISHU_APP_SECRET is not set}"
+      FEISHU_VERIFY_TOKEN: "${FEISHU_VERIFY_TOKEN:-}"
+      FEISHU_ENCRYPT_KEY: "${FEISHU_ENCRYPT_KEY:-}"
     ports:
       - "48080:48080"
     working_dir: /workspace
